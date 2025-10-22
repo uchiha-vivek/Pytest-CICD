@@ -1,4 +1,4 @@
-name: python test with continous integration
+name: python testing and linting
 
 on:
   push:
@@ -7,8 +7,9 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test:
+  lint-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
@@ -18,16 +19,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Run Flake8 linting
+        run: |
+          flake8 .
+        working-directory: .
+
       - name: Run pytest
         run: |
           pytest -v --maxfail=1 --disable-warnings
-        working-directory: .   
+        working-directory: .
 
       - name: Post test summary
         if: ${{ always() }}
@@ -35,10 +42,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const conclusion = '${{ job.status }}';
-            const message = conclusion === 'success' 
-              ? 'All tests passed successfully!'
-              : 'Some tests failed. Please fix them before merging.';
+            const status = '${{ job.status }}';
+            const message = status === 'success' 
+              ? 'All tests and lint checks passed.'
+              : 'Some checks failed. Please fix them before merging.';
             if (context.payload.pull_request) {
               github.rest.issues.createComment({
                 issue_number: context.payload.pull_request.number,

@@ -1,5 +1,6 @@
 from app.binary_search import BinarySearch
 
+
 def test_binary_search():
     bs = BinarySearch()
     assert bs.binary_search([1, 3, 5, 7, 9], 7) == 3
